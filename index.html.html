@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DISASTER AI – Intelligent Emergency Detection System</title>
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#0b0c0f;--card:rgba(255,255,255,.05);--line:rgba(255,255,255,.1);--tx:#e8eaf0;--mut:#8b93a3;--red:#ff3355;--fire:#ff7a1a;--smoke:#9aa4b2;--flood:#3b9cff;--quake:#a66bff;--ok:#2ee59d}
+*{box-sizing:inherit}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#1d1626 0,transparent 60%),radial-gradient(900px 500px at -10% 110%,#10202e 0,transparent 55%),var(--bg);color:var(--tx);font:14px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif;min-height:100vh}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+h1{font-size:18px;letter-spacing:.18em;margin:0;font-weight:700}h1 b{color:var(--red)}
+.sub{color:var(--mut);font-size:12px;letter-spacing:.05em}
+main{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;padding:16px 20px;max-width:1400px;margin:auto}
+@media(max-width:900px){main{grid-template-columns:1fr;padding:12px}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.card h2{margin:0 0 10px;font-size:11px;letter-spacing:.16em;color:var(--mut);text-transform:uppercase;font-weight:600}
+.col{display:flex;flex-direction:column;gap:16px}
+.stage{position:relative;aspect-ratio:16/10;background:#000;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.stage video,.stage img,.stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.stage canvas{image-rendering:pixelated;mix-blend-mode:screen;pointer-events:none}
+.stage .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--mut);padding:20px}
+.scan::after{content:"";position:absolute;left:0;right:0;height:60px;top:-60px;background:linear-gradient(transparent,rgba(46,229,157,.25),transparent);animation:sc 2.6s linear infinite;pointer-events:none}
+@keyframes sc{to{top:100%}}
+.hud{position:absolute;top:8px;left:8px;display:flex;gap:6px}
+.tag{font-size:10px;letter-spacing:.12em;padding:3px 8px;border-radius:99px;background:rgba(0,0,0,.6);border:1px solid var(--line)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+button,.file{background:rgba(255,255,255,.07);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font:inherit;cursor:pointer;transition:.15s}
+button:hover:not(:disabled),.file:hover{background:rgba(255,255,255,.14)}button:disabled{opacity:.35;cursor:not-allowed}
+.pri{background:linear-gradient(135deg,#ff3355,#c4122f);border-color:transparent;font-weight:600}
+.file input{display:none}
+.meter{display:grid;grid-template-columns:90px 1fr 44px;gap:10px;align-items:center;margin:7px 0;font-size:12px}
+.bar{height:8px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden}.bar i{display:block;height:100%;width:0;transition:width .25s;border-radius:9px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}.row:last-child{border:0}.row span:first-child{color:var(--mut)}.row span:last-child{text-align:right}
+.big{font-size:20px;font-weight:700;margin-bottom:6px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.st{padding:10px;border-radius:12px;background:rgba(0,0,0,.3);border:1px solid var(--line)}.st small{color:var(--mut);display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase}.st b{font-size:16px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--mut)}.dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+#hist{max-height:260px;overflow:auto}.h{display:grid;grid-template-columns:8px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:12px}.h i{width:8px;height:30px;border-radius:4px}.h small{color:var(--mut);display:block}
+#alert{display:none;position:sticky;top:0;z-index:20;margin:0;padding:14px 20px;background:linear-gradient(90deg,#7a0a1e,#c4122f);border-bottom:2px solid #ff8097;animation:pu 1s infinite}
+#alert.show{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+@keyframes pu{50%{filter:brightness(1.35)}}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--mut)}
+footer{max-width:1400px;margin:0 auto;padding:4px 20px 28px;color:var(--mut);font-size:12px}
+nav{display:flex;gap:6px;flex-wrap:wrap}nav button{padding:6px 12px;font-size:12px}button.act{background:rgba(255,255,255,.2)}
+.sec{display:none;max-width:1400px;margin:auto;padding:16px 20px}
+input,select{background:rgba(0,0,0,.4);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:inherit;min-width:0}
+.frm{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+#sosB{display:none;position:fixed;inset:0;z-index:50;background:rgba(5,0,2,.92);align-items:center;justify-content:center;padding:16px;overflow:auto}#sosB.on{display:flex}
+.sosbox{width:min(560px,100%);background:#14080c;border:2px solid var(--red);border-radius:18px;padding:20px;text-align:center}
+.cnum{font-size:96px;font-weight:800;color:var(--red);line-height:1}
+.pbar{height:8px;background:rgba(255,255,255,.1);border-radius:9px;overflow:hidden;margin:10px 0}.pbar i{display:block;height:100%;width:100%;background:var(--red)}
+.cancel{width:100%;padding:18px;font-size:20px;font-weight:700;background:#fff;color:#000;border-radius:14px;margin-top:8px}.cancel:hover:not(:disabled){background:#ddd}
+.call{display:block;padding:20px;font-size:26px;font-weight:800;background:linear-gradient(135deg,#ff3355,#c4122f);border-radius:14px;color:#fff;text-decoration:none;margin:12px 0}
+body.crit::before{content:"";position:fixed;inset:0;z-index:60;pointer-events:none;border:6px solid var(--red);animation:fl .5s infinite alternate}
+@keyframes fl{to{border-color:transparent;box-shadow:inset 0 0 70px #ff3355}}
+.chip{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);margin:4px 4px 0 0;display:inline-block}
+.msg{font-size:12px;text-align:left;background:rgba(255,255,255,.06);padding:10px;border-radius:10px;margin:8px 0;max-height:110px;overflow:auto}
+.radar{height:100px;border-radius:12px;border:1px solid var(--line);background:repeating-radial-gradient(circle at 50% 50%,transparent 0 18px,rgba(46,229,157,.18) 19px 20px),#06110d;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;padding:6px}
+iframe.map{width:100%;height:220px;border:0;border-radius:12px;margin-top:8px}
+.hr{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}.hr img{width:96px;border-radius:8px;background:#000}
+</style></head><body>
+<div id="alert"><div><b>⚠ POSSIBLE DISASTER SIGNAL – AI ESTIMATE</b><div id="atxt"></div><small>This may be a false alarm. Nobody has been notified – verify with your own eyes and contact emergency services yourself if in danger.</small></div><div><button id="mute">🔊 Sound on</button> <button id="dis" class="pri">Dismiss</button></div></div>
+<header><div><h1>DISASTER <b>AI</b></h1><div class="sub">Intelligent Emergency Detection System · AI estimates only</div></div>
+<nav id="nav"><button data-v="mon" class="act">Monitor</button><button data-v="his">History</button><button data-v="con">Contacts</button><button id="hMute">🔊 Sound on</button></nav><div class="legend"><span><span class="dot" style="background:var(--fire)"></span>Fire / smoke</span><span><span class="dot" style="background:var(--flood)"></span>Flood</span><span><span class="dot" style="background:var(--quake)"></span>Earthquake</span></div></header>
+<main id="v_mon">
+<div class="col">
+<div class="card"><h2>Live monitor</h2>
+<div class="stage" id="stage"><video id="vid" playsinline muted style="display:none"></video><img id="img" alt="Uploaded image" style="display:none"><canvas id="ov"></canvas><div class="ph" id="ph">Start the camera or upload an image / video to begin analysis.</div><div class="hud"><span class="tag" id="tagA">IDLE</span></div></div>
+<div class="btns"><button class="pri" id="bStart">▶ Start camera</button><button id="bPause" disabled>⏸ Pause</button><button id="bStop" disabled>⏹ Stop</button><label class="file">⬆ Upload image / video<input type="file" id="up" accept="image/*,video/*"></label></div>
+</div>
+<div class="card"><h2>Signal channels (what the vision engine measures)</h2>
+<div class="meter"><span>🔥 Flames</span><div class="bar"><i id="m_fire" style="background:var(--fire)"></i></div><b id="p_fire">0%</b></div>
+<div class="meter"><span>🌫 Smoke</span><div class="bar"><i id="m_smoke" style="background:var(--smoke)"></i></div><b id="p_smoke">0%</b></div>
+<div class="meter"><span>🌊 Flood water</span><div class="bar"><i id="m_flood" style="background:var(--flood)"></i></div><b id="p_flood">0%</b></div>
+<div class="meter"><span>📳 Shaking</span><div class="bar"><i id="m_quake" style="background:var(--quake)"></i></div><b id="p_quake">0%</b></div>
+<div class="meter"><span>🚗 Collision</span><div class="bar"><i id="m_accident" style="background:var(--red)"></i></div><b id="p_accident">0%</b></div>
+</div></div>
+<div class="col">
+<div class="card" id="ana"><h2>AI analysis</h2><div class="big" id="evt">Awaiting input</div>
+<div class="row"><span>Category</span><span id="cat">—</span></div><div class="row"><span>Confidence</span><span id="conf">—</span></div><div class="row"><span>Severity</span><span id="sev">—</span></div><div class="row"><span>Timestamp</span><span id="ts">—</span></div>
+<div class="row" style="display:block"><span style="display:block">Observation</span><span id="obs" style="display:block;text-align:left;margin-top:4px">Nothing analysed yet.</span></div></div>
+<div class="card"><h2>Emergency dashboard</h2><div class="stats">
+<div class="st"><small>Camera</small><b id="sCam"><span class="dot"></span>Offline</b></div><div class="st"><small>Detection</small><b id="sDet">Standby</b></div>
+<div class="st"><small>Total events</small><b id="sTot">0</b></div><div class="st"><small>Input</small><b id="sIn">None</b></div></div>
+<h2 style="margin-top:14px">Recent detections</h2><div id="hist"><div class="sub">No detections yet.</div></div></div>
+<div class="card" id="accCard"><h2>Road accident detection</h2><div class="big" id="accT" style="font-size:15px">No accident pattern detected.</div><div class="sub" id="accD">Experimental motion analysis: looks for a large moving object that suddenly stops. Needs live camera or video (a still image has no motion).</div><img id="accI" alt="Snapshot of detected scene" style="display:none;width:100%;border-radius:10px;margin-top:8px"><div class="frm" style="margin:12px 0 4px"><select id="simSel"><option value="accident">Road accident</option><option value="fire">Fire</option><option value="flood">Flood</option><option value="quake">Earthquake</option></select><button id="bSim">Run SIMULATED SOS demo</button></div><div class="sub">The demo only tests the SOS screens. It is a simulation, not an AI detection, and is labelled as such everywhere.</div></div>
+<div class="card" id="voiceCard"><h2>Voice alerts</h2><div class="row"><span>Voice alerts</span><span><label style="cursor:pointer"><input type="checkbox" id="vOn"> Enabled</label></span></div><div class="row"><span>Volume</span><span><input type="range" id="vVol" min="0" max="100" style="width:140px;padding:0"> <b id="vVolT"></b></span></div><div class="row"><span>Voice</span><span><select id="vSel" style="max-width:210px"></select></span></div><div class="btns"><button id="vTest">🔊 Test voice alert</button></div><div class="sub" id="vStat" style="margin-top:8px"></div></div>
+<div class="card" id="locCard"><h2>GPS location</h2><div class="radar">📍&nbsp;<span id="lcTxt">Location unavailable</span></div><div class="sub" id="lcLn" style="margin-top:6px"></div><div class="btns"><button id="bLoc">Enable location</button><button id="bMap" disabled>Load embedded map</button></div><div id="lcMap"></div></div>
+</div></main>
+<section class="sec" id="v_his"><div class="card"><h2>Emergency alert history</h2><div class="frm" id="flt"></div><div id="full"></div><div class="btns"><button id="bClr">Clear history</button></div></div></section>
+<section class="sec" id="v_con"><div class="card"><h2>Emergency contacts</h2><div class="frm"><input id="cN" placeholder="Family member name" maxlength="40"><input id="cP" type="tel" placeholder="+91 98765 43210" maxlength="20"><button class="pri" id="cAdd">Add contact</button></div><div id="cList"></div><div class="sub" style="margin-top:10px">Stored only in this browser (localStorage) and never uploaded. It is not encrypted: anyone with access to this browser profile could read it. Include the country code so WhatsApp links work.</div></div></section>
+<div id="sosB"><div class="sosbox"><div id="s1"><div class="tag" id="sSim" style="display:none;color:#ffd24a">SIMULATED DEMONSTRATION – NOT A REAL DETECTION</div><h2 style="color:var(--red);font-size:14px;letter-spacing:.2em;margin:8px 0">SOS ALERT IN</h2><div class="cnum" id="sN">10</div><div class="pbar"><i id="sBar"></i></div><div class="big" id="sT"></div><div class="sub">Severity · confidence: <b id="sS"></b><br>Location: <b id="sL"></b></div><div class="msg" id="sM"></div><button class="cancel" id="sCancel">✖ CANCEL SOS – false alarm</button><div class="sub" style="margin-top:8px">AI estimate – may be a false alarm. Nothing is called or sent automatically.</div></div>
+<div id="s2" style="display:none"><h2 style="color:var(--red);font-size:14px;letter-spacing:.2em">EMERGENCY ACTION</h2><div class="big">Countdown finished – not cancelled</div><a class="call" href="tel:112">📞 CALL 112</a><div class="sub">This opens your phone’s dialer with 112 filled in; you must press call yourself. We cannot guarantee a call will connect (it needs a phone or dialer app and network signal).</div><div class="msg" id="sM2"></div><div class="btns" style="justify-content:center"><button id="shW">WhatsApp</button><button id="shS">SMS</button><button id="shN">Share…</button><button id="shC">Copy</button></div><div class="sub" id="sSh">Message prepared – NOT sent. It is only sent when you press Send in the app that opens.</div><div class="sub">Primary contact: <b id="sCt"></b></div><div class="btns" style="justify-content:center"><button id="sClose">Close</button></div></div>
+<div class="btns" style="justify-content:center"><button id="sMute">🔊 Sound on</button></div></div></div>
+<footer><b>Limitations:</b> DISASTER AI uses transparent computer-vision heuristics running locally in your browser (colour/flicker analysis for fire and smoke, texture + colour analysis for water, frame-to-frame motion matching for shaking). No video leaves your device. It is not a trained neural network and can be wrong: orange objects, grey walls, blue surfaces or a shaky hand can trigger false alarms. Earthquake detection with a normal webcam is unreliable because a moved or bumped camera looks identical. Results are estimates, never confirmed disasters, and no emergency service is contacted.</footer>
+<script>
+const $=id=>document.getElementById(id),cl=v=>Math.max(0,Math.min(1,v));
+const T={fire:{n:"Possible fire / flames",c:"Fire",col:"var(--fire)"},smoke:{n:"Possible smoke",c:"Fire",col:"var(--smoke)"},flood:{n:"Possible flooding",c:"Flood",col:"var(--flood)"},quake:{n:"Earthquake-like camera shaking",c:"Earthquake",col:"var(--quake)"},accident:{n:"POSSIBLE ROAD ACCIDENT DETECTED",c:"Road Accident",col:"var(--red)"}};
+const K=["fire","smoke","flood","quake","accident"],W=160;let H=120;
+const cv=document.createElement("canvas"),cx=cv.getContext("2d",{willReadFrequently:true}),ov=$("ov"),ox=ov.getContext("2d");
+const vid=$("vid"),img=$("img");
+let src=null,mode="idle",running=false,paused=false,stream=null,prevGray=null,hs=[],ema={},streak={},peak={},lastLog={},total=0,hist=[],mh=[],muted=false,actx=null,sirenT=null;
+function reset(){prevGray=null;hs=[];mh=[];ema={};streak={};peak={};K.forEach(k=>{ema[k]=0;streak[k]=0;peak[k]=0});}
+reset();
+
+function shift(g){
+ if(!prevGray||prevGray.length!==g.length)return null;
+ const m=6,st=3;let best={s:1e9,dx:0,dy:0},zero=0;
+ for(let dy=-5;dy<=5;dy++)for(let dx=-5;dx<=5;dx++){
+  let s=0,c=0;
+  for(let y=m;y<H-m;y+=st){const a=y*W,b=(y+dy)*W+dx;for(let x=m;x<W-m;x+=st){s+=Math.abs(g[a+x]-prevGray[b+x]);c++}}
+  s/=c;if(!dx&&!dy)zero=s;if(s<best.s)best={s,dx,dy};
+ }
+ if(best.s>0.92*zero)best={s:zero,dx:0,dy:0};
+ return best;
+}
+
+function analyze(still){
+ const vw=src.videoWidth||src.naturalWidth,vh=src.videoHeight||src.naturalHeight;if(!vw)return;
+ const nh=Math.round(W*vh/vw);if(nh!==H||cv.width!==W){H=nh;cv.width=W;cv.height=H;ov.width=W;ov.height=H;prevGray=null}
+ cx.drawImage(src,0,0,W,H);
+ const d=cx.getImageData(0,0,W,H).data,n=W*H,g=new Float32Array(n),o=ox.createImageData(W,H),od=o.data;
+ const top=Math.floor(H*.4),wn=(H-top)*W;let fire=0,flick=0,smk=0,wat=0,bm=0,bx0=W,bx1=0,by0=H,by1=0;
+ for(let i=0,p=0;i<n;i++,p+=4){
+  const r=d[p],gg=d[p+1],b=d[p+2],mx=Math.max(r,gg,b),mn=Math.min(r,gg,b),df=mx-mn,v=mx/255,s=mx?df/mx:0;
+  let h=0;if(df){h=mx===r?60*(((gg-b)/df)%6):mx===gg?60*((b-r)/df+2):60*((r-gg)/df+4);if(h<0)h+=360}
+  g[i]=.299*r+.587*gg+.114*b;
+  const dd=prevGray&&prevGray.length===n?Math.abs(g[i]-prevGray[i]):0,mv=dd>18;if(dd>28){bm++;const xx=i%W,yy=(i/W)|0;if(xx<bx0)bx0=xx;if(xx>bx1)bx1=xx;if(yy<by0)by0=yy;if(yy>by1)by1=yy}
+  if(h<=50&&s>.55&&v>.75&&r>gg&&gg>=b){fire++;if(mv)flick++;od[p]=255;od[p+1]=122;od[p+2]=26;od[p+3]=190}
+  else if(!still&&mv&&s<.14&&v>.35&&v<.9){smk++;od[p]=190;od[p+1]=200;od[p+2]=215;od[p+3]=130}
+  else if(i>=top*W&&i%W>0&&Math.abs(g[i]-g[i-1])<5&&Math.abs(g[i]-g[i-W])<6&&s<.7&&
+   ((h>=180&&h<=240&&s>.12&&v>.25)||(h>=18&&h<=45&&s>.25&&v>.3&&v<.75))){wat++;od[p]=59;od[p+1]=156;od[p+2]=255;od[p+3]=110}
+ }
+ ox.putImageData(o,0,0);
+ // shaking: global rigid-motion estimate between frames
+ let q=0,qi="";const now=performance.now();
+ if(!still){const sh=shift(g);if(sh&&sh.s<14)hs.push({t:now,dx:sh.dx,dy:sh.dy});
+  while(hs.length&&now-hs[0].t>2500)hs.shift();
+  if(hs.length>=10&&now-hs[0].t>1200){
+   const f=a=>{let r=0,p=0,sum=0;for(const e of hs){const v=e[a];sum+=Math.abs(v);const sg=Math.sign(v);if(sg&&p&&sg!==p)r++;if(sg)p=sg}return{r,amp:sum/hs.length}};
+   const X=f("dx"),Y=f("dy"),B=X.r*X.amp>=Y.r*Y.amp?X:Y;
+   q=cl((B.r-3)/7)*cl((B.amp-.7)/1.3)*85;
+   qi=`The whole frame jumped back and forth ${B.r} times in the last 2.5 s (average ${B.amp.toFixed(1)} px) – uniform rigid motion consistent with shaking. A hand-held or bumped camera looks identical, so treat as unreliable.`;}
+ }
+ // road accident: a large, localised moving region that suddenly stops (experimental motion heuristic)
+ let aS=0,ai="";
+ if(!still){const ext=bm?((bx1-bx0+1)*(by1-by0+1))/n:0;mh.push({t:now,mf:bm/n,ext});while(mh.length&&now-mh[0].t>3000)mh.shift();
+  if(mh.length>=12&&q<40){let pk=0,pt=0;for(const e of mh)if(e.ext<.7&&e.mf>pk){pk=e.mf;pt=e.t}
+   const rc=mh.slice(-5).reduce((a,e)=>a+e.mf,0)/5;
+   if(pk>.05&&now-pt>400){aS=Math.min(70,cl((pk-.05)/.12)*cl((1-rc/pk-.5)/.4)*100);
+    ai=`A large moving region (${(pk*100).toFixed(0)}% of the frame) abruptly stopped (now ${(rc*100).toFixed(1)}%), a motion pattern that can match a vehicle impact. It cannot tell vehicle types, overturned vehicles or people on the road, and a car braking or a person walking past can look similar.`}}}
+ const fr=fire/n,fl=fire?flick/fire:0;
+ let fS=cl(fr/.06)*100;fS*=still||!prevGray?.85:(.55+.45*cl(fl/.15));
+ let sS=cl((smk/n)/.1)*100;if(q>40)sS*=.3;
+ let wS=cl(((wat/wn)-.15)/.35)*100*(still?.9:1);if(fS>60)wS*=.5;
+ prevGray=g;
+ const raw={fire:fS,smoke:sS,flood:wS,quake:q,accident:aS};
+ const info={
+  fire:`${(fr*100).toFixed(1)}% of pixels match bright flame colours${fl>.1?", with flickering motion typical of real flames":still?" (single image – no flicker check possible)":" but little flicker, so it may be a static orange object"}.`,
+  smoke:`${(smk/n*100).toFixed(1)}% of the frame is grey, low-saturation area that is moving/changing – a typical smoke signature.`,
+  flood:`${(wat/wn*100).toFixed(0)}% of the lower frame is smooth, water-coloured surface (muddy brown or blue-grey with little texture), as seen on flooded streets.`,
+  quake:qi,accident:ai};
+ finish(raw,info,still);
+}
+
+function finish(raw,info,still){
+ K.forEach(a=>{ema[a]=still?raw[a]:ema[a]*.5+raw[a]*.5;streak[a]=ema[a]>=45?streak[a]+1:0;peak[a]=Math.max(peak[a],ema[a]);
+  $("m_"+a).style.width=ema[a]+"%";$("p_"+a).textContent=Math.round(ema[a])+"%"});
+ let best=null;K.forEach(a=>{if(ema[a]>=45&&(still||streak[a]>=3)&&(!best||ema[a]>ema[best]))best=a});
+ const ana=$("ana");
+ if(!best){$("evt").textContent="No visible disaster detected.";$("evt").style.color="var(--ok)";
+  ["cat","conf","sev"].forEach(i=>$(i).textContent="—");$("ts").textContent=new Date().toLocaleTimeString();
+  $("obs").textContent="No strong fire, smoke, flood or shaking signal in the current frame.";$("sDet").textContent="Clear";$("sDet").style.color="var(--ok)";ana.style.borderColor="";return}
+ const c=Math.round(ema[best]),sev=c<55?"Low":c<70?"Moderate":c<85?"High":"Critical",t=T[best],ts=new Date();
+ $("evt").textContent=t.n;$("evt").style.color=t.col;$("cat").textContent=t.c;$("conf").textContent=c+"% (AI estimate)";$("sev").textContent=sev;
+ $("ts").textContent=ts.toLocaleString();$("obs").textContent=info[best];$("sDet").textContent="⚠ "+t.c;$("sDet").style.color=t.col;ana.style.borderColor=t.col;
+ const nowMs=Date.now();
+ if(!lastLog[best]||nowMs-lastLog[best]>15000){lastLog[best]=nowMs;newEvent(best,sev,c,info[best],false);
+  $("sTot").textContent=total;renderHist();raiseAlert(t.n+" · "+sev+" severity · "+c+"% confidence")}
+}
+function renderHist(){$("hist").innerHTML=hist.map(h=>`<div class="h"><i style="background:${h.t.col}"></i><div>${h.t.n}<small>${h.t.c} · ${h.sev} · ${h.c}%</small></div><small>${h.ts}</small></div>`).join("")}
+
+// alerts + siren
+function raiseAlert(txt){$("atxt").textContent=txt;$("alert").classList.add("show");if(!sosOn)siren(true)}
+function siren(on){clearInterval(sirenT);sirenT=null;if(!on||muted||!actx)return;let hi=false,k=0;
+ const beep=()=>{const o=actx.createOscillator(),gn=actx.createGain();o.type="square";o.frequency.value=hi?880:620;hi=!hi;gn.gain.value=.05;o.connect(gn);gn.connect(actx.destination);o.start();o.stop(actx.currentTime+.22);if(++k>(vs.on&&SS?3:14))siren(false)};
+ beep();sirenT=setInterval(beep,300)}
+$("dis").onclick=()=>{$("alert").classList.remove("show");siren(false)};
+$("mute").onclick=()=>{muted=!muted;$("mute").textContent=muted?"🔇 Muted":"🔊 Sound on";if(muted)siren(false)};
+
+// UI state
+function ui(){const m={camera:"Live camera",video:"Video file",image:"Image",idle:"None"};
+ $("sIn").textContent=m[mode];$("bPause").disabled=!(mode==="camera"||mode==="video");$("bStop").disabled=mode==="idle";
+ $("sCam").innerHTML=`<span class="dot ${mode==="camera"&&!paused?"on":""}"></span>`+(mode==="camera"?(paused?"Paused":"Live"):"Offline");
+ $("tagA").textContent=!running?(mode==="image"?"IMAGE":"IDLE"):paused?"PAUSED":"SCANNING";
+ $("stage").classList.toggle("scan",running&&!paused);$("ph").style.display=mode==="idle"?"flex":"none";
+ $("bPause").textContent=paused?"▶ Resume":"⏸ Pause"}
+function clearAnalysis(){reset();ox.clearRect(0,0,ov.width,ov.height);K.forEach(a=>{$("m_"+a).style.width="0";$("p_"+a).textContent="0%"});
+ $("evt").textContent="Awaiting input";$("evt").style.color="";["cat","conf","sev","ts"].forEach(i=>$(i).textContent="—");$("obs").textContent="Nothing analysed yet.";$("sDet").textContent="Standby";$("sDet").style.color="";$("ana").style.borderColor=""}
+function halt(){running=false;paused=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}vid.pause();vid.srcObject=null;vid.removeAttribute("src");
+ vid.style.display=img.style.display="none";src=null;mode="idle";clearAnalysis();ui()}
+
+$("bStart").onclick=async()=>{
+ try{actx=actx||new(window.AudioContext||window.webkitAudioContext)()}catch(e){}
+ halt();
+ try{stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:640}},audio:false});
+  vid.srcObject=stream;vid.style.display="block";await vid.play();src=vid;mode="camera";running=true;ui()}
+ catch(e){mode="idle";ui();$("ph").textContent="Camera unavailable ("+(e.name||"error")+"). Allow camera access, or open this page in its own browser tab / over https or localhost. You can still upload an image or video.";}
+};
+$("bPause").onclick=()=>{paused=!paused;if(mode==="camera"){paused?vid.pause():vid.play()}else if(mode==="video"){paused?vid.pause():vid.play()}ui()};
+$("bStop").onclick=halt;
+$("up").onchange=e=>{const f=e.target.files[0];if(!f)return;try{actx=actx||new(window.AudioContext||window.webkitAudioContext)()}catch(x){}
+ halt();const url=URL.createObjectURL(f);
+ if(f.type.startsWith("image/")){img.onload=()=>{img.style.display="block";src=img;mode="image";running=false;ui();analyze(true);$("sIn").textContent="Image: "+f.name.slice(0,18)};img.src=url}
+ else{vid.src=url;vid.loop=false;vid.style.display="block";vid.onloadeddata=()=>{src=vid;mode="video";running=true;vid.play();ui()};
+  vid.onended=()=>{running=false;ui();const p=K.filter(k=>peak[k]>=45).map(k=>T[k].n+" (peak "+Math.round(peak[k])+"%)");
+   $("obs").textContent="Video report: "+(p.length?p.join("; ")+".":"no disaster signals above the detection threshold were found.")+" AI estimate only."}}
+ e.target.value=""};
+(function loop(){if(running&&!paused&&src&&(src.readyState>=2))analyze(false);setTimeout(loop,110)})();
+ui();
+/* ===== v2: accident card, SOS, contacts, GPS, history ===== */
+function load(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let contacts=load("da_contacts",[]),loc=null,wid=null,sosOn=false,sosT=null,cur=null,lastSos={},filt="All",editId=-1;
+hist=load("da_hist",[]);
+const fmt=iso=>new Date(iso).toLocaleString(),locTxt=()=>loc?loc.lat.toFixed(5)+", "+loc.lng.toFixed(5):"Location unavailable",locLink=()=>loc?"https://www.google.com/maps?q="+loc.lat+","+loc.lng:"";
+// GPS
+function drawLoc(msg){$("lcTxt").textContent=loc?locTxt()+" (±"+loc.acc+" m)":"Location unavailable"+(msg?" – "+msg:"");
+ $("lcLn").innerHTML=loc?`<a href="${locLink()}" target="_blank" rel="noopener" style="color:var(--flood)">Open in Google Maps ↗</a>`:"";$("bMap").disabled=!loc}
+$("bLoc").onclick=()=>{if(!navigator.geolocation)return drawLoc("not supported by this browser");if(wid!=null)navigator.geolocation.clearWatch(wid);$("lcTxt").textContent="Requesting location…";
+ wid=navigator.geolocation.watchPosition(p=>{loc={lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy)};drawLoc()},e=>{loc=null;drawLoc(e.code===1?"permission denied":"could not be retrieved")},{enableHighAccuracy:true,maximumAge:10000,timeout:20000})};
+$("bMap").onclick=()=>{$("lcMap").innerHTML=`<iframe class="map" title="Map" src="https://maps.google.com/maps?q=${loc.lat},${loc.lng}&z=16&output=embed"></iframe>`};
+// events
+function snap(){try{const w=src.videoWidth||src.naturalWidth,h=src.videoHeight||src.naturalHeight,c=document.createElement("canvas");c.width=320;c.height=Math.round(320*h/w);c.getContext("2d").drawImage(src,0,0,c.width,c.height);return c.toDataURL("image/jpeg",.6)}catch(e){return""}}
+function newEvent(k,sev,c,note,sim){const t=T[k],e={id:Date.now(),k,name:t.n,cat:t.c,col:t.col,conf:c,sev,iso:new Date().toISOString(),loc:loc?locTxt()+" · "+locLink():"Location unavailable",note,sim:!!sim,snap:sim?"":snap(),cancelled:null,shared:false};
+ hist.unshift(e);hist=hist.slice(0,25);save("da_hist",hist);renderHist();renderFull();$("sTot").textContent=hist.length;
+ if(k==="accident"){$("accT").textContent=(sim?"[SIMULATION] ":"")+"POSSIBLE ROAD ACCIDENT DETECTED – "+c+"% · "+sev+" · "+new Date().toLocaleTimeString();$("accD").textContent=note+" AI estimate – not a confirmed accident.";if(e.snap){$("accI").src=e.snap;$("accI").style.display="block"}}
+ if(!sosOn&&(sim||Date.now()-(lastSos[k]||0)>60000)&&((k==="fire"&&c>=70)||(k==="flood"&&c>=70)||k==="quake"||k==="accident"))startSOS(e);else announce(e);return e}
+function renderHist(){$("hist").innerHTML=hist.length?hist.slice(0,8).map(h=>`<div class="h"><i style="background:${h.col}"></i><div>${esc(h.name)}${h.sim?" (SIM)":""}<small>${h.cat} · ${h.sev} · ${h.conf}%${h.cancelled===true?" · Emergency cancelled by user":""}</small></div><small>${new Date(h.iso).toLocaleTimeString()}</small></div>`).join(""):'<div class="sub">No detections yet.</div>'}
+function renderFull(){$("flt").innerHTML=["All","Fire","Flood","Earthquake","Road Accident"].map(f=>`<button class="${f===filt?"act":""}" onclick="filt='${f}';renderFull()">${f==="All"?"All Events":f}</button>`).join("");
+ $("full").innerHTML=hist.filter(h=>filt==="All"||h.cat===filt).map(h=>`<div class="hr"><div>${h.snap?`<img src="${h.snap}" alt="Snapshot">`:""}</div><div><b style="color:${h.col}">${esc(h.name)}</b>${h.sim?' <span class="chip">SIMULATION</span>':""}<div class="sub">${h.cat} · ${h.conf}% confidence · ${h.sev} · ${fmt(h.iso)}</div><div class="sub">Location: ${esc(h.loc)}</div><span class="chip">${h.cancelled===true?"Emergency cancelled by user":h.cancelled===false?"SOS countdown expired (not cancelled)":"No SOS triggered"}</span><span class="chip">${h.shared?"Contact message: sharing opened by user":"Contact message: not shared"}</span></div></div>`).join("")||'<div class="sub">No events for this filter.</div>'}
+$("bClr").onclick=()=>{if(confirm("Clear all history?")){hist=[];save("da_hist",hist);renderHist();renderFull();$("sTot").textContent=0}};
+// SOS
+function msgFor(e){const m={fire:"fire",smoke:"fire (smoke)",flood:"flood",quake:"earthquake",accident:"road accident"}[e.k];
+ return `EMERGENCY ALERT! Disaster AI detected a possible ${m} near your family member. Detection time: ${fmt(e.iso)}. Approximate location: ${loc?locLink()+" ("+locTxt()+")":"unavailable"}. AI summary: ${e.note} (${e.conf}% confidence, ${e.sev} severity; AI estimate, not confirmed).${e.sim?" [SIMULATED DEMO – not a real detection]":""} Please try to contact them and verify their safety.`}
+function beep(){if(muted)return;try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();actx.resume();const o=actx.createOscillator(),g=actx.createGain();o.type="square";o.frequency.value=1000;g.gain.value=.08;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.18)}catch(e){}}
+function startSOS(e){sosOn=true;cur=e;lastSos[e.k]=Date.now();siren(false);document.body.classList.add("crit");$("sosB").classList.add("on");$("s1").style.display="block";$("s2").style.display="none";
+ $("sSim").style.display=e.sim?"inline-block":"none";$("sT").textContent=e.name+(e.sim?" (simulation)":"");$("sS").textContent=e.sev+" · "+e.conf+"%";$("sL").textContent=locTxt();$("sM").textContent=msgFor(e);
+ const b=$("sBar");b.style.transition="none";b.style.width="100%";void b.offsetWidth;b.style.transition="width 10s linear";b.style.width="0";
+ sayNow((e.sim?"Simulated demonstration. ":"")+"Possible "+VS[e.k]+". S O S in 10 seconds. Cancel if false alarm.");let n=10;const tick=()=>{if(n<=0){clearInterval(sosT);return expire()}$("sN").textContent=n;beep();if(n<=5)sayNow(String(n));n--};tick();sosT=setInterval(tick,1000)}
+function endSOS(){clearInterval(sosT);stopVoice();sosOn=false;$("sosB").classList.remove("on");document.body.classList.remove("crit");save("da_hist",hist);renderHist();renderFull()}
+function expire(){cur.cancelled=false;sayNow("S O S alert active. Call one one two now. Your family message is ready."+locSpeech());save("da_hist",hist);renderFull();$("s1").style.display="none";$("s2").style.display="block";$("sM2").textContent=msgFor(cur);const c=contacts.find(x=>x.p)||contacts[0];$("sCt").textContent=c?c.name+" ("+c.num+")":"none saved – add one in the Contacts tab"}
+$("sCancel").onclick=()=>{cur.cancelled=true;endSOS();$("alert").classList.remove("show");siren(false)};
+$("sClose").onclick=endSOS;
+function share(w){const c=contacts.find(x=>x.p)||contacts[0],m=msgFor(cur);
+ if((w==="w"||w==="s")&&!c){$("sSh").textContent="Add an emergency contact first (Contacts tab), or use Share… / Copy.";return}
+ if(w==="w")window.open("https://wa.me/"+c.num.replace(/\D/g,"")+"?text="+encodeURIComponent(m),"_blank");
+ else if(w==="s")window.open("sms:"+c.num.replace(/[^\d+]/g,"")+"?body="+encodeURIComponent(m),"_blank");
+ else if(w==="n"&&navigator.share)navigator.share({text:m}).catch(()=>{});
+ else{(navigator.clipboard?navigator.clipboard.writeText(m):Promise.reject()).then(()=>$("sSh").textContent="Message copied – paste it into any app and press Send yourself.").catch(()=>$("sSh").textContent="Copy failed – select the message text above manually.");return}
+ cur.shared=true;save("da_hist",hist);renderFull();$("sSh").textContent="Sharing opened by you. The message is NOT sent until you press Send in that app."}
+$("shW").onclick=()=>share("w");$("shS").onclick=()=>share("s");$("shN").onclick=()=>share("n");$("shC").onclick=()=>share("c");
+$("bSim").onclick=()=>{if(!sosOn)newEvent($("simSel").value,"High",85,"SIMULATED DEMONSTRATION – no real detection took place.",true)};
+// sound toggle
+function setMute(v){muted=v;if(v)siren(false);["mute","hMute","sMute"].forEach(i=>$(i).textContent=v?"🔇 Muted":"🔊 Sound on")}
+["mute","hMute","sMute"].forEach(i=>$(i).onclick=()=>setMute(!muted));
+// contacts
+function renderContacts(){$("cList").innerHTML=contacts.map((c,i)=>`<div class="row"><span><label><input type="radio" name="pri" ${c.p?"checked":""} onchange="setPri(${i})"> ${esc(c.name)}${c.p?" (primary)":""}</label></span><span>${esc(c.num)} <button onclick="editC(${i})">Edit</button> <button onclick="delC(${i})">Remove</button></span></div>`).join("")||'<div class="sub">No contacts yet – add at least one.</div>'}
+window.setPri=i=>{contacts.forEach((c,j)=>c.p=j===i);save("da_contacts",contacts);renderContacts()};
+window.editC=i=>{editId=i;$("cN").value=contacts[i].name;$("cP").value=contacts[i].num;$("cAdd").textContent="Save changes"};
+window.delC=i=>{const was=contacts[i].p;contacts.splice(i,1);if(was&&contacts[0])contacts[0].p=true;save("da_contacts",contacts);renderContacts()};
+$("cAdd").onclick=()=>{const n=$("cN").value.trim(),p=$("cP").value.trim();if(!n||!/^\+?[\d\s()-]{6,18}$/.test(p)){alert("Enter a name and a valid mobile number (with country code, e.g. +91…).");return}
+ if(editId>=0){contacts[editId].name=n;contacts[editId].num=p;editId=-1}else contacts.push({name:n,num:p,p:!contacts.length});
+ save("da_contacts",contacts);$("cN").value=$("cP").value="";$("cAdd").textContent="Add contact";renderContacts()};
+// navigation
+document.querySelectorAll("#nav [data-v]").forEach(b=>b.onclick=()=>{document.querySelectorAll("#nav [data-v]").forEach(x=>x.classList.toggle("act",x===b));["mon","his","con"].forEach(v=>$("v_"+v).style.display=v===b.dataset.v?(v==="mon"?"grid":"block"):"none")});
+renderHist();renderFull();renderContacts();drawLoc();$("sTot").textContent=hist.length;
+/* ===== v3: voice alerts (browser SpeechSynthesis) ===== */
+const SS=window.speechSynthesis,VS={fire:"fire",smoke:"fire, smoke",flood:"flooding",quake:"earthquake-like shaking",accident:"road accident"};
+let vs=Object.assign({on:true,vol:100,name:""},load("da_voice",{})),voices=[],vt=null,curU=null,lastSpk={},unlocked=false;
+const locSpeech=()=>loc?" Location: latitude "+loc.lat.toFixed(3)+", longitude "+loc.lng.toFixed(3)+".":"";
+function vStat(m){$("vStat").textContent=m||(!SS?"Speech is not supported in this browser – on-screen alerts and beeps still work.":!vs.on?"Voice alerts are disabled.":"Voice ready: "+((pickVoice()||{}).name||"browser default voice")+". Spoken: detection, SOS countdown (last 5 seconds), location when available.")}
+function pickVoice(){const en=voices.filter(v=>/^en/i.test(v.lang));return en.find(v=>v.name===vs.name)||en.find(v=>/natural|neural|online/i.test(v.name))||en.find(v=>/google (us|uk)|samantha|karen|daniel|aria|jenny|zira/i.test(v.name))||en.find(v=>/en[-_](US|GB|IN)/i.test(v.lang))||en[0]||null}
+function loadVoices(){if(!SS)return;voices=SS.getVoices();const en=voices.filter(v=>/^en/i.test(v.lang));$("vSel").innerHTML=en.map(v=>`<option value="${esc(v.name)}">${esc(v.name)} (${esc(v.lang)})</option>`).join("")||'<option>Browser default</option>';const p=pickVoice();if(p)$("vSel").value=p.name;vStat()}
+function say(t){if(!SS||!vs.on)return;const u=new SpeechSynthesisUtterance(t),v=pickVoice();if(v){u.voice=v;u.lang=v.lang}else u.lang="en-US";u.volume=vs.vol/100;u.rate=.95;u.onerror=e=>{if(e.error!=="canceled"&&e.error!=="interrupted")vStat("Voice error: "+e.error)};curU=u;SS.resume();SS.speak(u)}
+function sayNow(t){if(!SS||!vs.on)return;clearTimeout(vt);SS.cancel();vt=setTimeout(()=>{if(vs.on)say(t)},40)}
+function stopVoice(){clearTimeout(vt);if(SS)SS.cancel()}
+function announce(e){if(sosOn)return;const n=Date.now();if(n-(lastSpk[e.k]||0)<30000)return;lastSpk[e.k]=n;sayNow("Warning. Possible "+VS[e.k]+" detected. "+e.sev+" severity."+locSpeech())}
+if(SS){SS.onvoiceschanged=loadVoices;loadVoices()}else vStat();
+$("vOn").checked=vs.on;$("vVol").value=vs.vol;$("vVolT").textContent=vs.vol+"%";
+$("vOn").onchange=e=>{vs.on=e.target.checked;save("da_voice",vs);if(!vs.on)stopVoice();vStat()};
+$("vVol").oninput=e=>{vs.vol=+e.target.value;$("vVolT").textContent=vs.vol+"%";save("da_voice",vs)};
+$("vSel").onchange=e=>{vs.name=e.target.value;save("da_voice",vs);vStat()};
+$("vTest").onclick=()=>{if(!SS)return vStat();if(!vs.on)return vStat("Voice alerts are disabled – tick Enabled first.");vStat();sayNow("Disaster A I voice alert test. Warning. Possible fire detected. This is only a test.")};
+document.addEventListener("click",()=>{if(SS&&!unlocked){unlocked=true;const u=new SpeechSynthesisUtterance(" ");u.volume=0;SS.speak(u)}},{once:true});
+</script></body></html>
